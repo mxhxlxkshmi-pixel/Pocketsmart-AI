@@ -33,6 +33,11 @@ def generate_jewelry():
     data = request.json
     # Logic for jewelry selection using Gemini API
     prompt = f"Suggest jewelry for occasion: {data.get('occasion')} within budget: {data.get('budget')}."
+    import os
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
     response = model.generate_content(prompt)
     return jsonify({"result": response.text})
 
