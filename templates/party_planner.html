@@ -36,23 +36,38 @@
         </div>
     </main>
 
-    <script>
-        document.getElementById('partyForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const event_type = document.getElementById('event_type').value;
-            const guests = document.getElementById('guests').value;
-            const budget = document.getElementById('budget').value;
+<script>
+  document.getElementById('partyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-            const response = await fetch('/generate-party', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ event_type, guests, budget })
-            });
+    const event_type = document.getElementById('event_type').value;
+    const guests = document.getElementById('guests').value;
+    const budget = document.getElementById('budget').value;
+    const outputContent = document.getElementById('outputContent');
+    const resultContainer = document.getElementById('result');
 
-            const data = await response.json();
-            document.getElementById('outputContent').innerText = data.result;
-            document.getElementById('result').style.display = 'block';
-        });
-    </script>
+    outputContent.innerText = "Generating party plan... Please wait.";
+    resultContainer.style.display = 'block';
+
+    try {
+      // Fixed: Changed '/generate-party' to '/generate_party'
+      const response = await fetch('/generate_party', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_type: event_type,
+          guests: guests,
+          budget: budget
+        })
+      });
+
+      const data = await response.json();
+      outputContent.innerText = data.result || "No recommendations generated.";
+    } catch (err) {
+      console.error(err);
+      outputContent.innerText = "Error generating party plan. Check console.";
+    }
+  });
+</script>
 </body>
 </html>
