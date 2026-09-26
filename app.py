@@ -1,20 +1,22 @@
+import os
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
-import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
 # Configure Gemini API
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
 
-model = genai.GenerativeModel("gemini-2.0-flash")
-
-# ---------------------------------------------------------
-# PAGE ROUTES (Renders HTML templates)
-# ---------------------------------------------------------
+# Use stable gemini-1.5-flash model
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
 @app.route("/home_planner")
@@ -29,71 +31,45 @@ def jewelry_planner():
 def party_planner():
     return render_template("party_planner.html")
 
-
-# ---------------------------------------------------------
-# API ENDPOINTS (Handles Gemini AI generation requests)
-# ---------------------------------------------------------
-
-# Generate Home Interior Plan
 @app.route("/generate_home", methods=["POST"])
 def generate_home():
-    data = request.json
-    
-    # Logic for home interior planning using Gemini API
-    prompt = f"""
-    Create a home interior plan for the following rooms:
-    {data.get('rooms')}
+    try:
+        data = request.get_json() or {}
+        rooms = data.get("rooms", "")
+        budget = data.get("budget", "")
+        
+        prompt = f"Plan home interior for {rooms} with total budget {budget}. Give itemized breakdown and recommendations."
+        response = model.generate_content(prompt)
+        return jsonify({"result": response.text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    Budget: {data.get('budget')}
-
-    Provide practical, attractive and budget-friendly interior design suggestions.
-    """
-    
-    response = model.generate_content(prompt)
-    return jsonify({"result": response.text})
-
-
-# Generate Party Plan
-@app.route("/generate_party", methods=["POST"])
-def generate_party():
-    data = request.json
-
-    # Logic for party planning using Gemini API
-    prompt = f"""
-    Plan a party for {data.get('guests')} guests
-    with event type {data.get('event_type')}
-    and budget {data.get('budget')}.
-
-    Suggest decorations, food, activities and a suitable schedule.
-    """
-
-    response = model.generate_content(prompt)
-    return jsonify({"result": response.text})
-
-
-# Generate Jewelry Suggestions
 @app.route("/generate_jewelry", methods=["POST"])
 def generate_jewelry():
-    data = request.json
+    try:
+        data = request.get_json() or {}
+        items = data.get("items", "")
+        budget = data.get("budget", "")
+        
+        prompt = f"Plan jewelry purchase for {items} within budget {budget}. Suggest breakdown and options."
+        response = model.generate_content(prompt)
+        return jsonify({"result": response.text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    # Logic for jewelry selection using Gemini API
-    prompt = f"""
-    Suggest jewelry for the occasion:
-    {data.get('occasion')}
-
-    Budget: {data.get('budget')}
-
-    Recommend suitable jewelry styles and explain why they would be appropriate.
-    """
-
-    response = model.generate_content(prompt)
-    return jsonify({"result": response.text})
-
-
-# ---------------------------------------------------------
-# SERVER LAUNCHER
-# ---------------------------------------------------------
+@app.route("/generate_party", methods=["POST"])
+def generate_party():
+    try:
+        data = request.get_json() or {}
+        event_type = data.get("event_type", "")
+        guests = data.get("guests", "")
+        budget = data.get("budget", "")
+        
+        prompt = f"Plan a {event_type} party for {guests} guests with a budget of {budget}. Provide a breakdown for catering, decoration, and venue."
+        response = model.generate_content(prompt)
+        return jsonify({"result": response.text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000, debug=True)
