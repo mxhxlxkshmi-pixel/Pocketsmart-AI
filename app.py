@@ -12,8 +12,8 @@ api_key = os.getenv("GEMINI_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
 
-# Use stable gemini-1.5-flash model
-model = genai.GenerativeModel("gemini-1.5-flash")
+# Use stable gemini-2.5-flash model
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 @app.route("/")
 def index():
