@@ -33,22 +33,33 @@
         </div>
     </main>
 
-    <script>
-        document.getElementById('homeForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const rooms = document.getElementById('rooms').value;
-            const budget = document.getElementById('budget').value;
+<script>
+  document.getElementById('homeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-            const response = await fetch('/generate-home', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rooms, budget })
-            });
+    const rooms = document.getElementById('rooms').value;
+    const budget = document.getElementById('budget').value;
+    const outputContent = document.getElementById('outputContent');
+    const resultContainer = document.getElementById('result');
 
-            const data = await response.json();
-            document.getElementById('outputContent').innerText = data.result;
-            document.getElementById('result').style.display = 'block';
-        });
-    </script>
+    outputContent.innerText = "Generating recommendations... Please wait.";
+    resultContainer.style.display = 'block';
+
+    try {
+      // Changed '/generate-home' to '/generate_home' (underscore)
+      const response = await fetch('/generate_home', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rooms: rooms, budget: budget })
+      });
+
+      const data = await response.json();
+      outputContent.innerText = data.result || "No recommendations generated.";
+    } catch (err) {
+      console.error(err);
+      outputContent.innerText = "Error fetching recommendations. Check console.";
+    }
+  });
+</script>
 </body>
 </html>
