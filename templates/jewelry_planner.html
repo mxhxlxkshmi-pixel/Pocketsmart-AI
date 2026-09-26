@@ -33,22 +33,58 @@
         </div>
     </main>
 
-    <script>
-        document.getElementById('jewelryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const occasion = document.getElementById('occasion').value;
-            const budget = document.getElementById('budget').value;
+ <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Select form or fallback to button click if form tag is missing
+    const form = document.getElementById('jewelryForm');
+    
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      
+      const occasionInput = document.getElementById('occasion');
+      const budgetInput = document.getElementById('budget');
+      const outputContent = document.getElementById('outputContent');
+      const resultContainer = document.getElementById('result');
 
-            const response = await fetch('/generate-jewelry', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ occasion, budget })
-            });
+      if (!occasionInput || !budgetInput) {
+        alert("Could not find input fields. Check if IDs 'occasion' and 'budget' exist on inputs.");
+        return;
+      }
 
-            const data = await response.json();
-            document.getElementById('outputContent').innerText = data.result;
-            document.getElementById('result').style.display = 'block';
+      if (outputContent) outputContent.innerText = "Generating recommendations... Please wait.";
+      if (resultContainer) resultContainer.style.display = 'block';
+
+      try {
+        const response = await fetch('/generate_jewelry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            occasion: occasionInput.value,
+            budget: budgetInput.value
+          })
         });
-    </script>
+
+        const data = await response.json();
+        
+        if (data.result) {
+          outputContent.innerText = data.result;
+        } else {
+          outputContent.innerText = "Error: " + (data.error || "No response generated.");
+        }
+      } catch (err) {
+        console.error(err);
+        if (outputContent) outputContent.innerText = "Failed to fetch recommendations. Check console.";
+      }
+    };
+
+    if (form) {
+      form.addEventListener('submit', handleSubmit);
+    } else {
+      // Fallback if no <form id="jewelryForm"> tag exists
+      const btn = document.querySelector('button');
+      if (btn) btn.addEventListener('click', handleSubmit);
+    }
+  });
+</script>  
 </body>
 </html>
