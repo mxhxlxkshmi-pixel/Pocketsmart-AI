@@ -9,10 +9,8 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = "pocketsmart_secret_key"
 
-# Initialize official Gemini client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Temporary user storage
 users = {}
 
 @app.route("/")
@@ -26,6 +24,8 @@ def login():
         password = request.form.get("password")
         if username in users and users[username] == password:
             session["user"] = username
+            if "history" not in session:
+                session["history"] = []
             return redirect(url_for("dashboard"))
         return render_template("login.html", error="Invalid credentials")
     return render_template("login.html")
@@ -43,11 +43,13 @@ def register():
 def dashboard():
     if "user" not in session:
         return redirect(url_for("login"))
-    return render_template("dashboard.html", username=session["user"])
+    history = session.get("history", [])
+    return render_template("dashboard.html", username=session["user"], history=history)
 
 @app.route("/logout")
 def logout():
     session.pop("user", None)
+    session.pop("history", None)
     return redirect(url_for("login"))
 
 @app.route("/home_planner")
@@ -62,7 +64,6 @@ def jewelry_planner():
 def party_planner():
     return render_template("party_planner.html")
 
-# Helper function to clean Markdown formatting from JSON
 def clean_json_response(text):
     text = text.strip()
     if text.startswith("```"):
@@ -73,6 +74,17 @@ def clean_json_response(text):
             lines = lines[:-1]
         text = "\n".join(lines).strip()
     return text
+
+def save_to_history(planner_type, title, budget):
+    if "history" not in session:
+        session["history"] = []
+    history = session["history"]
+    history.insert(0, {
+        "type": planner_type,
+        "title": title,
+        "budget": budget
+    })
+    session["history"] = history
 
 # 1. HOME INTERIOR PLANNER ROUTE
 @app.route("/generate_home", methods=["POST"])
@@ -111,6 +123,7 @@ def generate_home():
             contents=prompt
         )
         cleaned_result = clean_json_response(response.text)
+        save_to_history("Home Interior", f"Rooms: {rooms}", budget)
         return jsonify({"result": cleaned_result})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -158,6 +171,7 @@ def generate_jewelry():
             contents=prompt
         )
         cleaned_result = clean_json_response(response.text)
+        save_to_history("Jewelry Planner", f"Occasion/Items: {items}", budget)
         return jsonify({"result": cleaned_result})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -203,6 +217,7 @@ def generate_party():
             contents=prompt
         )
         cleaned_result = clean_json_response(response.text)
+        save_to_history("Party Planner", f"{event_type} ({guests} Guests)", budget)
         return jsonify({"result": cleaned_result})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
