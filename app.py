@@ -1,19 +1,14 @@
 import os
 from flask import Flask, render_template, request, jsonify
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# Configure Gemini API
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-
-# Use stable gemini-2.5-flash model
-model = genai.GenerativeModel("gemini-2.5-flash")
+# Initialize official Gemini client (reads GEMINI_API_KEY from environment)
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 @app.route("/")
 def index():
@@ -39,7 +34,10 @@ def generate_home():
         budget = data.get("budget", "")
         
         prompt = f"Plan home interior for {rooms} with total budget {budget}. Give itemized breakdown and recommendations."
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
         return jsonify({"result": response.text})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -52,7 +50,10 @@ def generate_jewelry():
         budget = data.get("budget", "")
         
         prompt = f"Plan jewelry purchase for {items} within budget {budget}. Suggest breakdown and options."
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
         return jsonify({"result": response.text})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -66,10 +67,13 @@ def generate_party():
         budget = data.get("budget", "")
         
         prompt = f"Plan a {event_type} party for {guests} guests with a budget of {budget}. Provide a breakdown for catering, decoration, and venue."
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
         return jsonify({"result": response.text})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=10000, debug=True)
